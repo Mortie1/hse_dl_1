@@ -1,4 +1,5 @@
 import numpy as np
+from scipy.special import log_softmax
 from .base import Criterion
 from .activations import LogSoftmax
 
@@ -14,8 +15,9 @@ class MSELoss(Criterion):
         :return: loss value
         """
         assert input.shape == target.shape, 'input and target shapes not matching'
-        # replace with your code ｀、ヽ｀、ヽ(ノ＞＜)ノ ヽ｀☂｀、ヽ
-        return super().compute_output(input, target)
+        norm = 1 / input.size
+        self.output = norm * np.sum(np.square(input - target))
+        return self.output
 
     def compute_grad_input(self, input: np.ndarray, target: np.ndarray) -> np.ndarray:
         """
@@ -24,8 +26,8 @@ class MSELoss(Criterion):
         :return: array of size (batch_size, *)
         """
         assert input.shape == target.shape, 'input and target shapes not matching'
-        # replace with your code ｀、ヽ｀、ヽ(ノ＞＜)ノ ヽ｀☂｀、ヽ
-        return super().compute_grad_input(input, target)
+        norm = 1 / input.size
+        return norm * 2 * (input - target)
 
 
 class CrossEntropyLoss(Criterion):
@@ -42,8 +44,9 @@ class CrossEntropyLoss(Criterion):
         :param target: labels array of size (batch_size, )
         :return: loss value
         """
-        # replace with your code ｀、ヽ｀、ヽ(ノ＞＜)ノ ヽ｀☂｀、ヽ
-        return super().compute_output(input, target)
+        norm = - (1 / target.size)
+        self.output = norm * log_softmax(input[:, target])
+        return self.output
 
     def compute_grad_input(self, input: np.ndarray, target: np.ndarray) -> np.ndarray:
         """

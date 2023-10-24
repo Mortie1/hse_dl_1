@@ -27,8 +27,8 @@ class Linear(Module):
         :param input: array of shape (batch_size, in_features)
         :return: array of shape (batch_size, out_features)
         """
-        # replace with your code ｀、ヽ｀、ヽ(ノ＞＜)ノ ヽ｀☂｀、ヽ
-        return super().compute_output(input)
+        self.output = input @ self.weight.T + self.bias if self.bias is not None else input @ self.weight.T
+        return self.output
 
     def compute_grad_input(self, input: np.ndarray, grad_output: np.ndarray) -> np.ndarray:
         """
@@ -36,16 +36,19 @@ class Linear(Module):
         :param grad_output: array of shape (batch_size, out_features)
         :return: array of shape (batch_size, in_features)
         """
-        # replace with your code ｀、ヽ｀、ヽ(ノ＞＜)ノ ヽ｀☂｀、ヽ
-        return super().compute_grad_input(input, grad_output)
+
+        return np.dot(grad_output, self.weight)
 
     def update_grad_parameters(self, input: np.ndarray, grad_output: np.ndarray):
         """
         :param input: array of shape (batch_size, in_features)
         :param grad_output: array of shape (batch_size, out_features)
         """
-        # replace with your code ｀、ヽ｀、ヽ(ノ＞＜)ノ ヽ｀☂｀、ヽ
-        super().update_grad_parameters(input, grad_output)
+
+        self.grad_weight += grad_output.T @ input
+        if self.bias is not None:
+            self.grad_bias += np.sum(grad_output, axis=0) 
+
 
     def zero_grad(self):
         self.grad_weight.fill(0)
@@ -108,8 +111,36 @@ class BatchNormalization(Module):
         :param input: array of shape (batch_size, num_features)
         :return: array of shape (batch_size, num_features)
         """
-        # replace with your code ｀、ヽ｀、ヽ(ノ＞＜)ノ ヽ｀☂｀、ヽ
-        return super().compute_output(input)
+        if self.training:
+            # считаем статистики 
+            batch_size = input.shape[0]
+            self.mean = np.mean(input, axis=0)
+            self.input_mean = input - self.mean
+            self.var =  np.var(input, axis=0)
+            self.sqrt_var = np.sqrt(self.var + self.eps)
+            self.inv_sqrt_var = np.reciprocal(self.sqrt_var)
+            
+            # нормирвка 
+            self.norm_input = self.input_mean * self.inv_sqrt_var
+                
+            # преобразовываем бегущие переменные 
+            self.running_mean = (1 - self.momentum) * self.running_mean + self.momentum * self.mean
+            self.running_var = (1 - self.momentum) * self.running_var + self.momentum * (batch_size / (batch_size - 1)) * self.var
+        else:
+            
+            # нормировка
+            self.norm_input = (input - self.running_mean) * np.reciprocal(np.sqrt(self.running_var + self.eps))
+            
+        # аффинное преобразование
+        if self.affine:
+            output = self.norm_input * self.weight + self.bias
+        else:
+            output = self.norm_input
+        
+        self.output = output
+        return self.output
+            
+            
 
     def compute_grad_input(self, input: np.ndarray, grad_output: np.ndarray) -> np.ndarray:
         """
@@ -117,16 +148,26 @@ class BatchNormalization(Module):
         :param grad_output: array of shape (batch_size, num_features)
         :return: array of shape (batch_size, num_features)
         """
-        # replace with your code ｀、ヽ｀、ヽ(ノ＞＜)ノ ヽ｀☂｀、ヽ
-        return super().compute_grad_input(input, grad_output)
+        # https://kevinzakka.github.io/2016/09/14/batch_normalization/
+        batch_size = grad_output.shape[0]
+        df_dx_hat = self.weight * grad_output if self.affine else grad_output
+        
+        if self.training:
+            dx = (1. / batch_size) * self.inv_sqrt_var * (batch_size * df_dx_hat - np.sum(df_dx_hat, axis=0)
+            - self.norm_input * np.sum(df_dx_hat * self.norm_input, axis=0))
+        else:
+            dx = (1. / batch_size) * np.reciprocal(np.sqrt(self.running_var + self.eps)) * (batch_size * df_dx_hat)
+        return dx
 
     def update_grad_parameters(self, input: np.ndarray, grad_output: np.ndarray):
         """
         :param input: array of shape (batch_size, num_features)
         :param grad_output: array of shape (batch_size, num_features)
         """
-        # replace with your code ｀、ヽ｀、ヽ(ノ＞＜)ノ ヽ｀☂｀、ヽ
-        super().update_grad_parameters(input, grad_output)
+        # https://kevinzakka.github.io/2016/09/14/batch_normalization/
+        if self.affine:
+            self.grad_bias += np.sum(grad_output, axis=0)
+            self.grad_weight += np.sum(self.norm_input*grad_output, axis=0)
 
     def zero_grad(self):
         if self.affine:
@@ -159,8 +200,13 @@ class Dropout(Module):
         :param input: array of an arbitrary size
         :return: array of the same size
         """
-        # replace with your code ｀、ヽ｀、ヽ(ノ＞＜)ノ ヽ｀☂｀、ヽ
-        return super().compute_output(input)
+        if self.training:
+            self.mask = np.random.binomial(1, 1 - self.p, input.shape)
+            output = (1 / (1 - self.p)) * self.mask * input
+        else:
+            output = input
+        self.output = output
+        return self.output
 
     def compute_grad_input(self, input: np.ndarray, grad_output: np.ndarray) -> np.ndarray:
         """
@@ -168,8 +214,10 @@ class Dropout(Module):
         :param grad_output: array of the same size
         :return: array of the same size
         """
-        # replace with your code ｀、ヽ｀、ヽ(ノ＞＜)ノ ヽ｀☂｀、ヽ
-        return super().compute_grad_input(input, grad_output)
+        if self.training:
+            return grad_output * self.mask * (1 / (1 - self.p))
+        else:
+            return grad_output
 
     def __repr__(self) -> str:
         return f'Dropout(p={self.p})'
@@ -188,8 +236,10 @@ class Sequential(Module):
         :param input: array of size matching the input size of the first layer
         :return: array of size matching the output size of the last layer
         """
-        # replace with your code ｀、ヽ｀、ヽ(ノ＞＜)ノ ヽ｀☂｀、ヽ
-        return super().compute_output(input)
+        output = input
+        for module in self.modules:
+            output = module(output)
+        return output
 
     def compute_grad_input(self, input: np.ndarray, grad_output: np.ndarray) -> np.ndarray:
         """
@@ -197,8 +247,14 @@ class Sequential(Module):
         :param grad_output: array of size matching the output size of the last layer
         :return: array of size matching the input size of the first layer
         """
-        # replace with your code ｀、ヽ｀、ヽ(ノ＞＜)ノ ヽ｀☂｀、ヽ
-        return super().compute_grad_input(input, grad_output)
+        grad_input = grad_output
+        for i in range(len(self.modules) - 1, 0, -1):
+            temp = self.modules[i].compute_grad_input(self.modules[i - 1].output, grad_input)
+            self.modules[i].update_grad_parameters(self.modules[i - 1].output, grad_input)
+            grad_input = temp
+        temp = self.modules[0].compute_grad_input(input, grad_input)
+        self.modules[0].update_grad_parameters(input, grad_input)
+        return temp
 
     def __getitem__(self, item):
         return self.modules[item]

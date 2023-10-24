@@ -1,7 +1,7 @@
 import sys
 import torch
 import numpy as np
-from .test_base import assert_almost_equal
+from .test_base import assert_almost_equal, assert_almost_equal1
 from torch import nn
 
 sys.path.append('..')
@@ -60,7 +60,6 @@ def _test_sequential(in_features=10, out_features=20, batch_size=128,
             y2.backward(torch.from_numpy(grad_output))
             grad_input = module1.backward(x1, grad_output)
             assert_almost_equal(x2.grad.numpy(), grad_input, debug_msg + 'input grad: {}')
-
             for grad, param in zip(module1.parameters_grad(), module2.parameters()):
                 assert_almost_equal(grad, param.grad.numpy(), debug_msg + 'params grad: {}')
 
