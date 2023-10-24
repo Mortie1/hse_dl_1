@@ -1,7 +1,7 @@
 import sys
 import torch
 import numpy as np
-from .test_base import assert_almost_equal
+from .test_base import assert_almost_equal, assert_almost_equal1
 from torch import nn
 
 sys.path.append('..')
@@ -37,11 +37,11 @@ def test_criterion(input_shape, mse=True, outer_iters=100, random_seed=None):
 
         l1 = module1(x1, y1)
         l2 = module2(x2, y2)
-        assert_almost_equal(l1, l2.detach().numpy(), debug_msg + 'forward pass: {}')
+        assert_almost_equal1(l1, l2.detach().numpy(), debug_msg + 'forward pass: {}')
 
         l2.backward()
         grad_input = module1.backward(x1, y1)
-        assert_almost_equal(x2.grad.numpy(), grad_input, debug_msg + 'input grad: {}')
+        assert_almost_equal1(x2.grad.numpy(), grad_input, debug_msg + 'input grad: {}')
 
 
 def test_criterions():

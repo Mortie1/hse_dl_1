@@ -62,6 +62,7 @@ class Module(ABC):
         self.output = self.compute_output(input)
         return self.output
 
+
     def backward(self, input: np.ndarray, grad_output: np.ndarray) -> np.ndarray:
         """
         Backward pass through the module

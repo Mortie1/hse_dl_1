@@ -7,6 +7,15 @@ def assert_almost_equal(x, y, debug_msg='{}'):
     assert x.shape == y.shape, debug_msg.format('wrong array shape')
     assert np.allclose(x, y), debug_msg.format('wrong array value')
 
+def assert_almost_equal1(x, y, debug_msg='{}'):
+    assert x.dtype == y.dtype, debug_msg.format('wrong array dtype')
+    assert x.shape == y.shape, debug_msg.format('wrong array shape')
+    if not np.allclose(x, y):
+        print('------------------x-------------------')
+        print(x)
+        print('------------------y-------------------')
+        print(y)
+    assert np.allclose(x, y), debug_msg.format('wrong array value')
 
 def assert_equal(x, y, debug_msg):
     assert x.dtype == y.dtype, debug_msg.format('wrong array dtype')
