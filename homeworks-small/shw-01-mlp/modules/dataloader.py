@@ -1,3 +1,5 @@
+import numpy as np
+
 class DataLoader(object):
     """
     Tool for shuffling data and forming mini-batches
@@ -20,22 +22,25 @@ class DataLoader(object):
         """
         :return: number of batches per epoch
         """
-        # replace with your code ｀、ヽ｀、ヽ(ノ＞＜)ノ ヽ｀☂｀、ヽ
-        return 0
+        return self.X.shape[0] // self.batch_size if self.X.shape[0] % self.batch_size == 0 else self.X.shape[0] // self.batch_size + 1
 
     def num_samples(self) -> int:
         """
         :return: number of data samples
         """
-        # replace with your code ｀、ヽ｀、ヽ(ノ＞＜)ノ ヽ｀☂｀、ヽ
-        return 0
+        return self.X.shape[0]
 
     def __iter__(self):
         """
         Shuffle data samples if required
         :return: self
         """
-        # your code here ｀、ヽ｀、ヽ(ノ＞＜)ノ ヽ｀☂｀、ヽ
+        self.batch_id = 0
+        if self.shuffle:
+            # https://stackoverflow.com/questions/4601373/better-way-to-shuffle-two-numpy-arrays-in-unison
+            p = np.random.permutation(self.X.shape[0])
+            self.X = self.X[p]
+            self.y = self.y[p]
         return self
 
     def __next__(self):
@@ -43,5 +48,10 @@ class DataLoader(object):
         Form and return next data batch
         :return: (x_batch, y_batch)
         """
-        # your code here ｀、ヽ｀、ヽ(ノ＞＜)ノ ヽ｀☂｀、ヽ
-        raise StopIteration
+        if self.batch_id < len(self):
+            x_batch = self.X[self.batch_id * self.batch_size : (self.batch_id + 1) * self.batch_size]
+            y_batch = self.y[self.batch_id * self.batch_size : (self.batch_id + 1) * self.batch_size]
+            self.batch_id += 1
+            return (x_batch, y_batch)
+        else:
+            raise StopIteration

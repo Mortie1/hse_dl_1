@@ -41,7 +41,7 @@ def test_criterion(input_shape, mse=True, outer_iters=100, random_seed=None):
 
         l2.backward()
         grad_input = module1.backward(x1, y1)
-        assert_almost_equal(x2.grad.numpy(), grad_input, debug_msg + 'input grad: {}')
+        assert_almost_equal1(x2.grad.numpy(), grad_input, debug_msg + 'input grad: {}')
 
 
 def test_criterions():
